@@ -9,12 +9,8 @@
  * @return {object} instance to class object */
 
 const EventEmitter = require('events');
-if (global.gEventEmitter === undefined) {
-    global.gEventEmitter = new EventEmitter();
-}
-const { gEventEmitter } = global;
 
-let api = function Binance( options = {} ) {
+let api = function Binance( options = {}, eventEmitter = new EventEmitter() ) {
     if ( !new.target ) return new api( options ); // Legacy support for calling the constructor without 'new'
     let Binance = this; // eslint-disable-line consistent-this
     const WebSocket = require( 'ws' );
@@ -650,7 +646,7 @@ let api = function Binance( options = {} ) {
             if ( this.endpoint && parseInt( this.endpoint.length, 10 ) === 60 ) Binance.options.log( 'Account data WebSocket reconnecting...' );
             else Binance.options.log( 'WebSocket reconnecting: ' + this.endpoint + '...' );
             try {
-                gEventEmitter.emit('node-binance-api:ws:reconnecting');
+                eventEmitter.emit('node-binance-api:ws:reconnecting');
                 reconnect();
             } catch ( error ) {
                 Binance.options.log( 'WebSocket reconnect error: ' + error.message );
@@ -2123,7 +2119,7 @@ let api = function Binance( options = {} ) {
         } else {
             // >>>>>>>>>>>>>>>>>>>>>>>>>> HANDLE type=listenKeyExpired <<<<<<<<<<<<<<<<<<<<<<<<<<<
             if (type === 'listenKeyExpired') {
-                gEventEmitter.emit('node-binance-api:userFutureData:listenKeyExpired');
+                eventEmitter.emit('node-binance-api:userFutureData:listenKeyExpired');
             }
             Binance.options.log( 'Unexpected userFutureData: ' + type );
         }
