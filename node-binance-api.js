@@ -7,6 +7,13 @@
  * ============================================================
  * @module jaggedsoft/node-binance-api
  * @return {object} instance to class object */
+
+const EventEmitter = require('events');
+if (global.gEventEmitter === undefined) {
+    global.gEventEmitter = new EventEmitter();
+}
+const { gEventEmitter } = global;
+
 let api = function Binance( options = {} ) {
     if ( !new.target ) return new api( options ); // Legacy support for calling the constructor without 'new'
     let Binance = this; // eslint-disable-line consistent-this
@@ -172,6 +179,7 @@ let api = function Binance( options = {} ) {
     const reqHandler = cb => ( error, response, body ) => {
         Binance.info.lastRequest = new Date().getTime();
         if ( response ) {
+            console.log("Binance API request ~ response ~ x-mbx-used-weight-1m:", response.headers['x-mbx-used-weight-1m'])
             Binance.info.statusCode = response.statusCode || 0;
             if ( response.request ) Binance.info.lastURL = response.request.uri.href;
             if ( response.headers ) {
@@ -496,6 +504,7 @@ let api = function Binance( options = {} ) {
         if ( !params.timeInForce && ( params.type.includes( 'LIMIT' ) || params.type === 'STOP' || params.type === 'TAKE_PROFIT' ) ) {
             params.timeInForce = 'GTX'; // Post only by default. Use GTC for limit orders.
         }
+        console.log('---node-binance-api---params=', params);
         return promiseRequest( 'v1/order', params, { base:fapi, type:'TRADE', method:'POST' } );
     };
     const deliveryOrder = async ( side, symbol, quantity, price = false, params = {} ) => {
@@ -641,6 +650,7 @@ let api = function Binance( options = {} ) {
             if ( this.endpoint && parseInt( this.endpoint.length, 10 ) === 60 ) Binance.options.log( 'Account data WebSocket reconnecting...' );
             else Binance.options.log( 'WebSocket reconnecting: ' + this.endpoint + '...' );
             try {
+                gEventEmitter.emit('node-binance-api:ws:reconnecting');
                 reconnect();
             } catch ( error ) {
                 Binance.options.log( 'WebSocket reconnect error: ' + error.message );
@@ -2111,6 +2121,10 @@ let api = function Binance( options = {} ) {
                 Binance.options.future_account_config_update_callback( fUserConfigDataAccountUpdateConvertData( data ) );
             }
         } else {
+            // >>>>>>>>>>>>>>>>>>>>>>>>>> HANDLE type=listenKeyExpired <<<<<<<<<<<<<<<<<<<<<<<<<<<
+            if (type === 'listenKeyExpired') {
+                gEventEmitter.emit('node-binance-api:userFutureData:listenKeyExpired');
+            }
             Binance.options.log( 'Unexpected userFutureData: ' + type );
         }
     };
