@@ -175,7 +175,9 @@ let api = function Binance( options = {}, eventEmitter = new EventEmitter() ) {
     const reqHandler = cb => ( error, response, body ) => {
         Binance.info.lastRequest = new Date().getTime();
         if ( response ) {
-            console.log("Binance API request ~ response ~ x-mbx-used-weight-1m:", response.headers['x-mbx-used-weight-1m'])
+            eventEmitter.emit('node-binance-api:requestInfo', {
+                usedWeight: response.headers['x-mbx-used-weight-1m'],
+            });
             Binance.info.statusCode = response.statusCode || 0;
             if ( response.request ) Binance.info.lastURL = response.request.uri.href;
             if ( response.headers ) {
